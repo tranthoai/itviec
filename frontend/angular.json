@@ -58,7 +58,8 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "none",
+              "outputPath": "../public/frontend/production"
             },
             "development": {
               "buildOptimizer": false,
@@ -66,7 +67,9 @@
               "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
-              "namedChunks": true
+              "namedChunks": true,
+              "outputHashing": "none",
+              "outputPath": "../public/frontend/development"
             }
           },
           "defaultConfiguration": "production"

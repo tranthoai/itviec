@@ -1,116 +1,81 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\PostRepository")
- * @ORM\Table(name="symfony_demo_post")
- * @UniqueEntity(fields={"slug"}, errorPath="title", message="post.slug_unique")
+ * Post
  *
- * Defines the properties of the Post entity to represent the blog posts.
- *
- * See https://symfony.com/doc/current/doctrine.html#creating-an-entity-class
- *
- * Tip: if you have an existing database, you can generate these entity class automatically.
- * See https://symfony.com/doc/current/doctrine/reverse_engineering.html
- *
- * @author Ryan Weaver <weaverryan@gmail.com>
- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
- * @author Yonel Ceruto <yonelceruto@gmail.com>
+ * @ORM\Table(name="post", uniqueConstraints={@ORM\UniqueConstraint(name="post_author_id_key", columns={"author_id"})})
+ * @ORM\Entity
  */
 class Post
 {
     /**
+     * @var int
+     *
+     * @ORM\Column(name="id", type="integer", nullable=false)
      * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="SEQUENCE")
+     * @ORM\SequenceGenerator(sequenceName="post_id_seq", allocationSize=1, initialValue=1)
      */
-    private ?int $id = null;
-
-    /**
-     * @ORM\Column(type="string")
-     */
-    #[Assert\NotBlank]
-    private ?string $title = null;
-
-    /**
-     * @ORM\Column(type="string")
-     */
-    private ?string $slug = null;
-
-    /**
-     * @ORM\Column(type="string")
-     */
-    #[
-        Assert\NotBlank(message: 'post.blank_summary'),
-        Assert\Length(max: 255)
-    ]
-    private ?string $summary = null;
+    private $id;
 
     /**
      * @var string
      *
-     * @ORM\Column(type="text")
+     * @ORM\Column(name="title", type="string", length=255, nullable=false)
      */
-    #[
-        Assert\NotBlank(message: 'post.blank_content'),
-        Assert\Length(min: 10, minMessage: 'post.too_short_content')
-    ]
-    private ?string $content = null;
+    private $title;
 
     /**
-     * @ORM\Column(type="datetime")
-     */
-    private \DateTime $publishedAt;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User")
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private ?User $author = null;
-
-    /**
-     * @var Comment[]|Collection
+     * @var string
      *
-     * @ORM\OneToMany(
-     *      targetEntity="Comment",
-     *      mappedBy="post",
-     *      orphanRemoval=true,
-     *      cascade={"persist"}
-     * )
-     * @ORM\OrderBy({"publishedAt": "DESC"})
+     * @ORM\Column(name="slug", type="string", length=255, nullable=false)
      */
-    private Collection $comments;
+    private $slug;
 
     /**
-     * @var Tag[]|Collection
+     * @var string
      *
-     * @ORM\ManyToMany(targetEntity="App\Entity\Tag", cascade={"persist"})
-     * @ORM\JoinTable(name="symfony_demo_post_tag")
-     * @ORM\OrderBy({"name": "ASC"})
+     * @ORM\Column(name="summary", type="string", length=255, nullable=false)
      */
-    #[Assert\Count(max: 4, maxMessage: 'post.too_many_tags')]
-    private Collection $tags;
+    private $summary;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="content", type="text", nullable=false)
+     */
+    private $content;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="published_at", type="date", nullable=false)
+     */
+    private $publishedAt;
+
+    /**
+     * @var \User
+     *
+     * @ORM\ManyToOne(targetEntity="User")
+     * @ORM\JoinColumns({
+     *   @ORM\JoinColumn(name="author_id", referencedColumnName="id")
+     * })
+     */
+    private $author;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Tag::class, inversedBy="posts")
+     */
+    private $tags;
 
     public function __construct()
     {
-        $this->publishedAt = new \DateTime();
-        $this->comments = new ArrayCollection();
         $this->tags = new ArrayCollection();
     }
 
@@ -132,9 +97,11 @@ class Post
         return $this->title;
     }
 
-    public function setTitle(?string $title): void
+    public function setTitle(string $title): self
     {
         $this->title = $title;
+
+        return $this;
     }
 
     public function getSlug(): ?string
@@ -142,57 +109,11 @@ class Post
         return $this->slug;
     }
 
-    public function setSlug(string $slug): void
+    public function setSlug(string $slug): self
     {
         $this->slug = $slug;
-    }
 
-    public function getContent(): ?string
-    {
-        return $this->content;
-    }
-
-    public function setContent(?string $content): void
-    {
-        $this->content = $content;
-    }
-
-    public function getPublishedAt(): \DateTime
-    {
-        return $this->publishedAt;
-    }
-
-    public function setPublishedAt(\DateTime $publishedAt): void
-    {
-        $this->publishedAt = $publishedAt;
-    }
-
-    public function getAuthor(): ?User
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(User $author): void
-    {
-        $this->author = $author;
-    }
-
-    public function getComments(): Collection
-    {
-        return $this->comments;
-    }
-
-    public function addComment(Comment $comment): void
-    {
-        $comment->setPost($this);
-        if (!$this->comments->contains($comment)) {
-            $this->comments->add($comment);
-        }
-    }
-
-    public function removeComment(Comment $comment): void
-    {
-        $this->comments->removeElement($comment);
+        return $this;
     }
 
     public function getSummary(): ?string
@@ -200,27 +121,68 @@ class Post
         return $this->summary;
     }
 
-    public function setSummary(?string $summary): void
+    public function setSummary(string $summary): self
     {
         $this->summary = $summary;
+
+        return $this;
     }
 
-    public function addTag(Tag ...$tags): void
+    public function getContent(): ?string
     {
-        foreach ($tags as $tag) {
-            if (!$this->tags->contains($tag)) {
-                $this->tags->add($tag);
-            }
-        }
+        return $this->content;
     }
 
-    public function removeTag(Tag $tag): void
+    public function setContent(string $content): self
     {
-        $this->tags->removeElement($tag);
+        $this->content = $content;
+
+        return $this;
     }
 
+    public function getPublishedAt(): ?\DateTimeInterface
+    {
+        return $this->publishedAt;
+    }
+
+    public function setPublishedAt(\DateTimeInterface $publishedAt): self
+    {
+        $this->publishedAt = $publishedAt;
+
+        return $this;
+    }
+
+    public function getAuthor(): ?User
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?User $author): self
+    {
+        $this->author = $author;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Tag[]
+     */
     public function getTags(): Collection
     {
         return $this->tags;
     }
+    public function addTag(Tag $tag): self
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags[] = $tag;
+        }
+        return $this;
+    }
+    public function removeTag(Tag $tag): self
+    {
+        $this->tags->removeElement($tag);
+        return $this;
+    }
+
+
 }

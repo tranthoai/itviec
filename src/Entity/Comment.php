@@ -1,84 +1,67 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use function Symfony\Component\String\u;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
+ * Comment
+ *
+ * @ORM\Table(name="comment", uniqueConstraints={@ORM\UniqueConstraint(name="comment_post_id_key", columns={"post_id"}), @ORM\UniqueConstraint(name="comment_author_id_key", columns={"author_id"})})
  * @ORM\Entity
- * @ORM\Table(name="symfony_demo_comment")
- *
- * Defines the properties of the Comment entity to represent the blog comments.
- * See https://symfony.com/doc/current/doctrine.html#creating-an-entity-class
- *
- * Tip: if you have an existing database, you can generate these entity class automatically.
- * See https://symfony.com/doc/current/doctrine/reverse_engineering.html
- *
- * @author Ryan Weaver <weaverryan@gmail.com>
- * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
 class Comment
 {
     /**
+     * @var int
+     *
+     * @ORM\Column(name="id", type="integer", nullable=false)
      * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="SEQUENCE")
+     * @ORM\SequenceGenerator(sequenceName="comment_id_seq", allocationSize=1, initialValue=1)
      */
-    private ?int $id = null;
+    private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Post", inversedBy="comments")
-     * @ORM\JoinColumn(nullable=false)
+     * @var string
+     *
+     * @ORM\Column(name="content", type="text", nullable=false)
      */
-    private ?Post $post = null;
+    private $content;
 
     /**
-     * @ORM\Column(type="text")
+     * @var \DateTime
+     *
+     * @ORM\Column(name="published_at", type="date", nullable=false)
      */
-    #[
-        Assert\NotBlank(message: 'comment.blank'),
-        Assert\Length(
-            min: 5,
-            minMessage: 'comment.too_short',
-            max: 10000,
-            maxMessage: 'comment.too_long',
-        )
-    ]
-    private ?string $content = null;
+    private $publishedAt;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @var \Post
+     *
+     * @ORM\ManyToOne(targetEntity="Post")
+     * @ORM\JoinColumns({
+     *   @ORM\JoinColumn(name="post_id", referencedColumnName="id")
+     * })
      */
-    private \DateTime $publishedAt;
+    private $post;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User")
-     * @ORM\JoinColumn(nullable=false)
+     * @var \User
+     *
+     * @ORM\ManyToOne(targetEntity="User")
+     * @ORM\JoinColumns({
+     *   @ORM\JoinColumn(name="author_id", referencedColumnName="id")
+     * })
      */
-    private ?User $author = null;
+    private $author;
 
-    public function __construct()
+    /**
+     * @return string
+     */
+    public function __toString() : string
     {
-        $this->publishedAt = new \DateTime();
-    }
-
-    #[Assert\IsTrue(message: 'comment.is_spam')]
-    public function isLegitComment(): bool
-    {
-        $containsInvalidCharacters = null !== u($this->content)->indexOf('@');
-
-        return !$containsInvalidCharacters;
+        return sprintf('%s', $this->getContent());
     }
 
     public function getId(): ?int
@@ -91,29 +74,23 @@ class Comment
         return $this->content;
     }
 
-    public function setContent(string $content): void
+    public function setContent(string $content): self
     {
         $this->content = $content;
+
+        return $this;
     }
 
-    public function getPublishedAt(): \DateTime
+    public function getPublishedAt(): ?\DateTimeInterface
     {
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(\DateTime $publishedAt): void
+    public function setPublishedAt(\DateTimeInterface $publishedAt): self
     {
         $this->publishedAt = $publishedAt;
-    }
 
-    public function getAuthor(): ?User
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(User $author): void
-    {
-        $this->author = $author;
+        return $this;
     }
 
     public function getPost(): ?Post
@@ -121,8 +98,24 @@ class Comment
         return $this->post;
     }
 
-    public function setPost(Post $post): void
+    public function setPost(?Post $post): self
     {
         $this->post = $post;
+
+        return $this;
     }
+
+    public function getAuthor(): ?User
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?User $author): self
+    {
+        $this->author = $author;
+
+        return $this;
+    }
+
+
 }

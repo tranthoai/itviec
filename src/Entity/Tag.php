@@ -1,50 +1,57 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity()
- * @ORM\Table(name="symfony_demo_tag")
+ * Tag
  *
- * Defines the properties of the Tag entity to represent the post tags.
- *
- * See https://symfony.com/doc/current/doctrine.html#creating-an-entity-class
- *
- * @author Yonel Ceruto <yonelceruto@gmail.com>
+ * @ORM\Table(name="tag", uniqueConstraints={@ORM\UniqueConstraint(name="tag_name_key", columns={"name"})})
+ * @ORM\Entity
  */
-class Tag implements \JsonSerializable
+class Tag
 {
     /**
+     * @var int
+     *
+     * @ORM\Column(name="id", type="integer", nullable=false)
      * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="SEQUENCE")
+     * @ORM\SequenceGenerator(sequenceName="tag_id_seq", allocationSize=1, initialValue=1)
      */
-    private ?int $id = null;
+    private $id;
 
     /**
-     * @ORM\Column(type="string", unique=true)
+     * @var string
+     *
+     * @ORM\Column(name="name", type="string", length=255, nullable=false)
      */
-    private ?string $name = null;
+    private $name;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Post::class, mappedBy="tags")
+     */
+    private $posts;
+
+    public function __construct()
+    {
+        $this->questions = new ArrayCollection();
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString() : string
+    {
+        return sprintf('%s', $this->getName());
+    }
 
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function setName(string $name): void
-    {
-        $this->name = $name;
     }
 
     public function getName(): ?string
@@ -52,20 +59,35 @@ class Tag implements \JsonSerializable
         return $this->name;
     }
 
+    public function setName(string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
     /**
-     * {@inheritdoc}
+     * @return Collection|Post[]
      */
-    public function jsonSerialize(): string
+    public function getPosts(): Collection
     {
-        // This entity implements JsonSerializable (http://php.net/manual/en/class.jsonserializable.php)
-        // so this method is used to customize its JSON representation when json_encode()
-        // is called, for example in tags|json_encode (templates/form/fields.html.twig)
-
-        return $this->name;
+        return $this->posts;
+    }
+    public function addPost(Post $post): self
+    {
+        if (!$this->posts->contains($post)) {
+            $this->posts[] = $post;
+            $post->addTag($this);
+        }
+        return $this;
+    }
+    public function removePost(Post $post): self
+    {
+        if ($this->questions->removeElement($post)) {
+            $post->removeTag($this);
+        }
+        return $this;
     }
 
-    public function __toString(): string
-    {
-        return $this->name;
-    }
+
 }

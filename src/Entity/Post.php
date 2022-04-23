@@ -114,6 +114,14 @@ class Post
         $this->tags = new ArrayCollection();
     }
 
+    /**
+     * @return string
+     */
+    public function __toString() : string
+    {
+        return sprintf('%s', $this->getTitle());
+    }
+
     public function getId(): ?int
     {
         return $this->id;

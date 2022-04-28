@@ -21,7 +21,12 @@ class DashboardController extends AbstractDashboardController
 //        return parent::index();
 
          $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
-         return $this->redirect($adminUrlGenerator->setController(PostCrudController::class)->generateUrl());
+
+         return $this->redirect(
+             $adminUrlGenerator
+                 ->setController(PostCrudController::class)
+                 ->generateUrl()
+         );
 
         // Option 1. You can make your dashboard redirect to some common page of your backend
         //
